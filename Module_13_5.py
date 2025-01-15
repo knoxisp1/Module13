@@ -22,7 +22,7 @@ class UserState(StatesGroup):
 
 
 @dp.message_handler()
-async def all_mesage(message):
+async def all_mesages(message):
     await message.answer("Введите команду /start, что бы начать общение")
 
 
