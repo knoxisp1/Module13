@@ -21,8 +21,8 @@ class UserState(StatesGroup):
     growth = State()
     weight = State()
 
-@dp.message_handler(text="Привет!")
-async def hello(message):
+@dp.message_handler()
+async def all_mesages(message):
     await message.answer("Введите команду /start, что бы начать общение")
 
 @dp.message_handler(commands=['start'])
