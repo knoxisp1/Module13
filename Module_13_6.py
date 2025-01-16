@@ -1,19 +1,22 @@
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.dispatcher.storage import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.dispatcher import FSMContext
-import aiogram
-from pyexpat.errors import messages
+import asyncio
 
 api = ""
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
-
-kb = InlineKeyboardMarkup()
-button = InlineKeyboardButton(text="Рассчитать норму калорий", callback_data='calories')
-button1 = InlineKeyboardButton(text="Формулы расчета", callback_data='formulas')
-kb.add(button, button1)
+kb = ReplyKeyboardMarkup(resize_keyboard=True)
+btn = KeyboardButton(text='Рассчитать')
+btn1 = KeyboardButton(text='Информация')
+kb.add(btn, btn1)
+kb_inline = InlineKeyboardMarkup()
+btn2 = InlineKeyboardButton(text="Рассчитать норму калорий", callback_data='calories')
+btn3 = InlineKeyboardButton(text="Формулы расчёта", callback_data='formulas')
+kb_inline.add(btn2, btn3)
 
 
 class UserState(StatesGroup):
@@ -21,35 +24,26 @@ class UserState(StatesGroup):
     growth = State()
     weight = State()
 
-@dp.message_handler()
-async def all_mesages(message):
-    await message.answer("Введите команду /start, что бы начать общение")
 
-@dp.message_handler(commands=['start'])
-async def start(message):
-    await message.answer("Привет. Я бот помогающий твоему здоровью.")
-
-
-
-@dp.message_handler(text='Рассчитать')
-async def main_menu(message):
-    await message.answer("Выберите опцию:", reply_markup=kb)
-
-
-@dp.callback_query_handler(text="formulas")
+@dp.callback_query_handler(text='formulas')
 async def get_formulas(call):
-    await call.message.answer("10*вес(кг)+6,25*рост(см)-5*возраст(г)-161")
+    await call.message.answer("(10 х вес в кг) + (6,25 х рост в см) – (5 х возраст в г) – 161")
     await call.answer()
 
 
+@dp.message_handler(text="Рассчитать")
+async def main_menu(message):
+    await message.answer("Выберите опцию:", reply_markup=kb_inline)
+
+
 @dp.message_handler(commands=['start'])
 async def start(message):
-    await message.answer("Привет! Я бот помогающий твоему здоровью")
+    await message.answer("Привет! Я бот помогающий твоему здоровью.", reply_markup=kb)
 
 
-@dp.callback_query_handler(text="calories")
+@dp.callback_query_handler(text='calories')
 async def set_age(call):
-    await call.message.answer('Введите ваш возраст:')
+    await call.message.answer("Введите свой возраст:")
     await call.answer()
     await UserState.age.set()
 
@@ -75,6 +69,11 @@ async def send_calories(message, state):
     result = 10 * data.get("weight") + 6.25 * data.get("growth") - 5 * data.get("age") - 161
     await message.answer(f"Ваша норма калорий: {result}")
     await state.finish()
+
+
+@dp.message_handler()
+async def all_messages(message):
+    await message.answer('Введите команду /start, чтобы начать общение.')
 
 
 if __name__ == "__main__":
